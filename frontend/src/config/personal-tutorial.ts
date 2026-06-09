@@ -214,7 +214,7 @@ export const personalTutorialData: TutorialSection[] = [
         id: 'disclaimer',
         icon: AlertTriangle,
         title: '免责声明',
-        description: '先闲管家（个人版）本地部署使用声明与风险提示。',
+        description: '闲管家（个人版）本地部署使用声明与风险提示。',
       },
       {
         id: 'about',

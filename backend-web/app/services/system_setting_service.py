@@ -64,7 +64,7 @@ PERSONAL_EDITION_DEFAULT_SETTINGS: dict[str, tuple[str, str | None]] = {
     "registration_enabled": ("false", "是否允许用户注册"),
     "login_captcha_enabled": ("false", "登录是否需要滑动验证码"),
     "show_default_login_info": ("false", "登录页是否展示默认账号密码提示"),
-    "login.system_name": ("先闲管家（个人版）", "登录页系统名称"),
+    "login.system_name": ("闲管家（个人版）", "登录页系统名称"),
     "login.system_title": ("本机部署的\n闲鱼自动化管家", "登录页系统标题"),
     "login.system_description": (
         "账号管理、智能客服、卡券发货、商品发布，一站式打理闲鱼店铺",

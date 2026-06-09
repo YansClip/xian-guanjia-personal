@@ -14,6 +14,7 @@ from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from common.core.deployment import is_personal_edition
 from common.models.system_setting import SystemSetting
 from common.utils.text_utils import escape_xss
 
@@ -48,8 +49,8 @@ DEFAULT_SYSTEM_SETTINGS: dict[str, tuple[str, str | None]] = {
     "login.system_title": (DEFAULT_LOGIN_SYSTEM_TITLE, "登录页系统标题"),
     "login.system_description": (DEFAULT_LOGIN_SYSTEM_DESCRIPTION, "登录页系统描述"),
     "auth.footer_ad_html": (DEFAULT_AUTH_FOOTER_AD_HTML, "登录页和注册页底部广告 HTML"),
-    "theme.effect": ("solid", "系统主题效果（solid-纯色，gradient-炫彩）"),
-    "theme.color_preset": ("ocean", "系统主题颜色预设"),
+    "theme.effect": ("gradient", "系统主题效果（solid-纯色，gradient-炫彩）"),
+    "theme.color_preset": ("studio", "系统主题颜色预设"),
     "theme.font_family": ("system", "系统主题字体预设"),
     "log.retention_days": ("7", "日志保留天数（所有模块生效，修改后实时刷新各服务日志策略）"),
     "account.face_verify_timeout_disable": ("true", "人脸验证超时是否自动禁用账号"),
@@ -57,6 +58,19 @@ DEFAULT_SYSTEM_SETTINGS: dict[str, tuple[str, str | None]] = {
     # api_url 默认空字符串表示未配置；enabled 默认 false 表示不启用
     "proxy.api_url": ("", "代理 API 的 URL（可能较长，用于配置外部代理服务）"),
     "proxy.enabled": ("false", "是否启用代理（true/false）"),
+}
+
+PERSONAL_EDITION_DEFAULT_SETTINGS: dict[str, tuple[str, str | None]] = {
+    "registration_enabled": ("false", "是否允许用户注册"),
+    "login_captcha_enabled": ("false", "登录是否需要滑动验证码"),
+    "show_default_login_info": ("false", "登录页是否展示默认账号密码提示"),
+    "login.system_name": ("先闲管家（个人版）", "登录页系统名称"),
+    "login.system_title": ("本机部署的\n闲鱼自动化管家", "登录页系统标题"),
+    "login.system_description": (
+        "账号管理、智能客服、卡券发货、商品发布，一站式打理闲鱼店铺",
+        "登录页系统描述",
+    ),
+    "auth.footer_ad_html": ("", "登录页和注册页底部广告 HTML"),
 }
 
 # 不需要XSS转义的键（布尔值、数字等）
@@ -106,13 +120,17 @@ class SystemSettingService:
         self.session = session
 
     async def ensure_default_settings(self) -> None:
-        existing_stmt = select(SystemSetting.key).where(SystemSetting.key.in_(tuple(DEFAULT_SYSTEM_SETTINGS.keys())))
+        default_settings = dict(DEFAULT_SYSTEM_SETTINGS)
+        if is_personal_edition():
+            default_settings.update(PERSONAL_EDITION_DEFAULT_SETTINGS)
+
+        existing_stmt = select(SystemSetting.key).where(SystemSetting.key.in_(tuple(default_settings.keys())))
         existing_result = await self.session.execute(existing_stmt)
         existing_keys = set(existing_result.scalars().all())
 
         missing_records = [
             SystemSetting(key=key, value=value, description=description)
-            for key, (value, description) in DEFAULT_SYSTEM_SETTINGS.items()
+            for key, (value, description) in default_settings.items()
             if key not in existing_keys
         ]
 

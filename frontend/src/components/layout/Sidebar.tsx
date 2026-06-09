@@ -20,15 +20,20 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import {
-  adminNavItems,
   bottomNavItems,
+  getAdminNavItems,
+  getAdminNavSections,
+  getMainNavItems,
+  getMainNavSections,
   getVisibleBottomNavItems,
   getVisibleNavEntries,
   isNavGroup,
-  mainNavItems,
   type NavGroup,
   type NavItem,
+  type NavSection,
 } from '@/config/navigation'
+import { isPersonalEdition } from '@/config/deployment'
+import { PERSONAL_APP_NAME } from '@/config/branding'
 import { useMenuVisibilityStore } from '@/store/menuVisibilityStore'
 import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/utils/cn'
@@ -37,24 +42,48 @@ interface SidebarProps {
   systemName?: string
 }
 
-export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
+export function Sidebar({ systemName = isPersonalEdition() ? PERSONAL_APP_NAME : '闲鱼管理系统' }: SidebarProps) {
   const { user } = useAuthStore()
   const { hiddenMenuKeys, isExeMode } = useMenuVisibilityStore()
   const { sidebarCollapsed, sidebarMobileOpen, setSidebarMobileOpen, setSidebarCollapsed } = useUIStore()
   const location = useLocation()
   const isAdmin = Boolean(user?.is_admin)
   const visibleMainNavItems = useMemo(
-    () => getVisibleNavEntries(mainNavItems, hiddenMenuKeys, isAdmin, isExeMode),
+    () => getVisibleNavEntries(getMainNavItems(), hiddenMenuKeys, isAdmin, isExeMode),
     [hiddenMenuKeys, isAdmin, isExeMode]
   )
   const visibleAdminNavItems = useMemo(
-    () => getVisibleNavEntries(adminNavItems, hiddenMenuKeys, isAdmin, isExeMode),
+    () => getVisibleNavEntries(getAdminNavItems(), hiddenMenuKeys, isAdmin, isExeMode),
     [hiddenMenuKeys, isAdmin, isExeMode]
   )
   const visibleBottomNavItems = useMemo(
     () => getVisibleBottomNavItems(bottomNavItems, hiddenMenuKeys, isAdmin, isExeMode),
     [hiddenMenuKeys, isAdmin, isExeMode]
   )
+  const visibleMainNavSections = useMemo(() => {
+    const sections = getMainNavSections()
+    if (!sections) {
+      return null
+    }
+    return sections
+      .map((section) => ({
+        ...section,
+        entries: getVisibleNavEntries(section.entries, hiddenMenuKeys, isAdmin, isExeMode),
+      }))
+      .filter((section) => section.entries.length > 0)
+  }, [hiddenMenuKeys, isAdmin, isExeMode])
+  const visibleAdminNavSections = useMemo(() => {
+    const sections = getAdminNavSections()
+    if (!sections) {
+      return null
+    }
+    return sections
+      .map((section) => ({
+        ...section,
+        entries: getVisibleNavEntries(section.entries, hiddenMenuKeys, isAdmin, isExeMode),
+      }))
+      .filter((section) => section.entries.length > 0)
+  }, [hiddenMenuKeys, isAdmin, isExeMode])
 
   // 展开的分组菜单 - 使用 Set 来避免重复添加触发重渲染
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
@@ -78,9 +107,37 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
     return () => window.removeEventListener('resize', handleResize)
   }, [setSidebarCollapsed])
 
+  const renderNavEntries = (entries: Array<NavItem | NavGroup>) => (
+    entries.map((entry) =>
+      isNavGroup(entry) ? (
+        <NavGroupComponent key={entry.key} group={entry} />
+      ) : (
+        <NavItemComponent key={entry.path} item={entry} />
+      )
+    )
+  )
+
+  const renderNavSection = (section: NavSection) => (
+    <div key={section.key}>
+      {showLabel && (
+        <div className="pt-3 pb-1.5 px-3 first:pt-0">
+          <p className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500 tracking-wide">
+            {section.label}
+          </p>
+        </div>
+      )}
+      {!showLabel && <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 mt-1 first:mt-0 first:pt-0 first:border-t-0" />}
+      <div className="space-y-0.5">{renderNavEntries(section.entries)}</div>
+    </div>
+  )
+
   // 路由变化时自动展开匹配的分组
   useEffect(() => {
-    const allGroups = [...visibleMainNavItems, ...visibleAdminNavItems].filter(isNavGroup) as NavGroup[]
+    const flatEntries = [
+      ...(visibleMainNavSections?.flatMap((section) => section.entries) ?? visibleMainNavItems),
+      ...(visibleAdminNavSections?.flatMap((section) => section.entries) ?? visibleAdminNavItems),
+    ]
+    const allGroups = flatEntries.filter(isNavGroup) as NavGroup[]
     for (const group of allGroups) {
       if (group.children.some((child) => location.pathname.startsWith(child.path))) {
         setExpandedGroups((prev) => {
@@ -91,7 +148,7 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
         })
       }
     }
-  }, [location.pathname, visibleMainNavItems, visibleAdminNavItems])
+  }, [location.pathname, visibleMainNavItems, visibleAdminNavItems, visibleMainNavSections, visibleAdminNavSections])
 
   const closeMobileSidebar = () => {
     setSidebarMobileOpen(false)
@@ -125,8 +182,8 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
             !showLabel && 'justify-center px-2',
             indent && showLabel && 'pl-9',
             isActive
-              ? 'bg-blue-600 text-white dark:text-white hover:text-white hover:bg-blue-700 shadow-sm'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+              ? 'bg-neutral-900 text-white dark:bg-white dark:text-black hover:text-white dark:hover:text-black shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900'
           )
         }
       >
@@ -153,16 +210,16 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
             className={cn(
               'flex items-center justify-center w-full px-2 py-2.5 rounded-md text-sm transition-all duration-150',
               isChildActive
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-black'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900'
             )}
           >
             <Icon className="w-4 h-4 flex-shrink-0" />
           </button>
           {/* 悬浮子菜单 */}
           <div className="absolute left-full top-0 ml-2 hidden group-hover:block z-50">
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[140px]">
-              <div className="px-3 py-2 text-xs font-medium text-slate-400 border-b border-slate-100 dark:border-slate-700">
+            <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg py-1 min-w-[140px]">
+              <div className="px-3 py-2 text-xs font-medium text-neutral-400 border-b border-neutral-100 dark:border-neutral-800">
                 {group.label}
               </div>
               {group.children.map((child) => (
@@ -174,8 +231,8 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
                     cn(
                       'flex items-center gap-2 px-3 py-2 text-sm transition-colors',
                       isActive
-                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
+                        : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900'
                     )
                   }
                 >
@@ -196,8 +253,8 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
           className={cn(
             'flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm transition-all duration-150',
             isChildActive
-              ? 'text-blue-600 dark:text-blue-400'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+              ? 'text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900'
           )}
         >
           <Icon className="w-4 h-4 flex-shrink-0" />
@@ -244,10 +301,10 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
         initial={false}
         className={cn(
           'fixed top-0 left-0 h-screen z-50',
-          'bg-white dark:bg-[#001529]',
+          'bg-neutral-50 dark:bg-black',
           'flex flex-col',
-          'transition-transform duration-200 ease-out',
-          'border-r border-slate-200 dark:border-slate-700',
+          'transition-transform duration-300 ease-out',
+          'border-r border-neutral-200/80 dark:border-neutral-800',
           sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0',
           sidebarMobileOpen ? 'w-72' : sidebarCollapsed ? 'w-16' : 'w-56'
         )}
@@ -255,16 +312,16 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
         {/* Header */}
         <div
           className={cn(
-            'h-14 flex items-center border-b border-slate-200 dark:border-slate-700',
+            'h-14 flex items-center border-b border-neutral-200/80 dark:border-neutral-800',
             !showLabel ? 'justify-center px-2' : 'justify-between px-4'
           )}
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-              <MessageSquare className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-4 h-4 text-white dark:text-black" />
             </div>
             {showLabel && (
-              <span className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[140px]">
+              <span className="font-semibold text-sm text-neutral-900 dark:text-white truncate max-w-[140px] tracking-tight">
                 {systemName}
               </span>
             )}
@@ -286,13 +343,9 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
             !showLabel ? 'px-1.5' : 'px-2'
           )}
         >
-          {visibleMainNavItems.map((entry) =>
-              isNavGroup(entry) ? (
-                <NavGroupComponent key={entry.key} group={entry} />
-              ) : (
-                <NavItemComponent key={entry.path} item={entry} />
-              )
-            )}
+          {visibleMainNavSections
+            ? visibleMainNavSections.map(renderNavSection)
+            : renderNavEntries(visibleMainNavItems)}
 
           {/* Admin section */}
           {isAdmin && (
@@ -307,19 +360,15 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
               {!showLabel && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700 mt-2" />
               )}
-              {visibleAdminNavItems.map((entry) =>
-                isNavGroup(entry) ? (
-                  <NavGroupComponent key={entry.key} group={entry} />
-                ) : (
-                  <NavItemComponent key={entry.path} item={entry} />
-                )
-              )}
+              {visibleAdminNavSections
+                ? visibleAdminNavSections.map(renderNavSection)
+                : renderNavEntries(visibleAdminNavItems)}
             </>
           )}
 
           {showLabel && (
             <div className="pt-4 pb-2 px-3">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">其他</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">帮助</p>
             </div>
           )}
           {!showLabel && (
@@ -357,10 +406,10 @@ export function Sidebar({ systemName = '闲鱼管理系统' }: SidebarProps) {
         onClick={() => setSidebarMobileOpen(true)}
         className={cn(
           'fixed top-2.5 left-2.5 z-50 sm:hidden',
-          'w-8 h-8 rounded-md',
-          'bg-blue-500 text-white shadow-md',
+          'w-8 h-8 rounded-lg',
+          'bg-neutral-900 dark:bg-white text-white dark:text-black shadow-md',
           'flex items-center justify-center',
-          'hover:bg-blue-600 active:scale-95 transition-all',
+          'hover:opacity-90 active:scale-95 transition-all',
           sidebarMobileOpen && 'pointer-events-none'
         )}
       >

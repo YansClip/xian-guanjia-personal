@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '@/utils/request'
 import { useUIStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
 import { useMenuVisibilityStore } from '@/store/menuVisibilityStore'
+import { isPersonalEdition } from '@/config/deployment'
 import { PageLoading } from '@/components/common/Loading'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
 import { DeliveryBlockRulesModal } from './DeliveryBlockRulesModal'
@@ -1734,7 +1735,7 @@ export function Accounts() {
               </div>
             </button>
 
-            {!isExeMode && (
+            {!isExeMode && !isPersonalEdition() && (
               <button
                 onClick={async () => {
                   const passed = await checkAdminPassword()

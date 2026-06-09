@@ -12,14 +12,24 @@ import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/utils/cn'
 import { getApiErrorMessage } from '@/utils/apiError'
 import type { DisclaimerSettings } from '@/types'
+import { isPersonalEdition } from '@/config/deployment'
+import { PERSONAL_DISCLAIMER_SETTINGS } from '@/config/branding'
 
 export function Disclaimer() {
   const { addToast } = useUIStore()
   const [loading, setLoading] = useState(true)
-  const [settings, setSettings] = useState<DisclaimerSettings>(() => normalizeDisclaimerSettings())
+  const [settings, setSettings] = useState<DisclaimerSettings>(() =>
+    isPersonalEdition() ? PERSONAL_DISCLAIMER_SETTINGS : normalizeDisclaimerSettings()
+  )
 
   useEffect(() => {
     const loadSettings = async () => {
+      if (isPersonalEdition()) {
+        setSettings(PERSONAL_DISCLAIMER_SETTINGS)
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
         const result = await getSystemSettings()

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
@@ -32,38 +32,45 @@ function rejectMalformedURI(): Plugin {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [rejectMalformedURI(), react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  server: {
-    port: 9000,
-    host: '0.0.0.0', // 允许外部访问
-    allowedHosts: [
-      'localhost',
-      '127.0.0.1',
-      'xy.zhinianboke.com',
-      'xy-back.zhinianboke.com'
-    ],
-    proxy: {
-      // 所有 API 请求统一代理到后端（含WebSocket升级）
-      '/api': {
-        target: 'http://localhost:8089',
-        changeOrigin: true,
-        ws: true,
-      },
-      // 静态文件代理到后端（包含上传的图片）
-      '/static': {
-        target: 'http://localhost:8089',
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const backendPort = env.VITE_BACKEND_PORT || '8089'
+  const devPort = Number(env.VITE_DEV_PORT || '9000')
+  const backendTarget = `http://localhost:${backendPort}`
+
+  return {
+    plugins: [rejectMalformedURI(), react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
-  build: {
-    outDir: 'dist',
-    assetsDir: 'static',
-  },
+    server: {
+      port: devPort,
+      host: '0.0.0.0', // 允许外部访问
+      allowedHosts: [
+        'localhost',
+        '127.0.0.1',
+        'xy.zhinianboke.com',
+        'xy-back.zhinianboke.com'
+      ],
+      proxy: {
+        // 所有 API 请求统一代理到后端（含WebSocket升级）
+        '/api': {
+          target: backendTarget,
+          changeOrigin: true,
+          ws: true,
+        },
+        // 静态文件代理到后端（包含上传的图片）
+        '/static': {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+      },
+    },
+    build: {
+      outDir: 'dist',
+      assetsDir: 'static',
+    },
+  }
 })

@@ -50,12 +50,34 @@ export const THEME_SETTINGS_UPDATED_EVENT = 'theme-settings-updated'
 export const THEME_MODE_STORAGE_KEY = 'theme'
 
 const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-  'theme.effect': 'solid',
-  'theme.color_preset': 'ocean',
+  'theme.effect': 'gradient',
+  'theme.color_preset': 'studio',
   'theme.font_family': 'system',
 }
 
 const THEME_PRESETS: Record<ThemeColorPreset, ThemePresetMeta> = {
+  studio: {
+    key: 'studio',
+    label: 'Studio 黑白',
+    description: 'Apple 风格极简黑白配色，克制高级，适合专注学习与研究。',
+    category: 'pure',
+    recommendedEffect: 'gradient',
+    palette: {
+      50: '250 250 250',
+      100: '245 245 245',
+      200: '229 229 229',
+      300: '212 212 212',
+      400: '163 163 163',
+      500: '115 115 115',
+      600: '82 82 82',
+      700: '64 64 64',
+      800: '38 38 38',
+      900: '23 23 23',
+      gradientFrom: '23 23 23',
+      gradientVia: '64 64 64',
+      gradientTo: '115 115 115',
+    },
+  },
   ocean: {
     key: 'ocean',
     label: '海洋蓝',
@@ -293,7 +315,7 @@ const THEME_EFFECT_DESCRIPTIONS: Record<ThemeEffect, string> = {
 const isThemeEffect = (value: unknown): value is ThemeEffect => value === 'solid' || value === 'gradient'
 
 const isThemeColorPreset = (value: unknown): value is ThemeColorPreset => {
-  return value === 'ocean' || value === 'emerald' || value === 'violet' || value === 'indigo' || value === 'amber' || value === 'sunset' || value === 'aurora' || value === 'rose' || value === 'ruby'
+  return value === 'studio' || value === 'ocean' || value === 'emerald' || value === 'violet' || value === 'indigo' || value === 'amber' || value === 'sunset' || value === 'aurora' || value === 'rose' || value === 'ruby'
 }
 
 const isThemeFontFamily = (value: unknown): value is ThemeFontFamily => {

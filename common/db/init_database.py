@@ -27,6 +27,7 @@ from common.db.default_publish_addresses import (
     REMOVED_PUBLISH_ADDRESS_PREFIXES,
     build_default_publish_addresses,
 )
+from common.core.deployment import is_personal_edition
 from common.db.session import async_engine, async_session_maker
 from common.utils.time_utils import get_beijing_now_naive
 from common.utils.security import generate_secret_key, get_password_hash
@@ -136,12 +137,12 @@ class DatabaseInitializer:
         ),
         (
             "theme.effect",
-            "solid",
+            "gradient",
             "系统主题效果（solid-纯色，gradient-炫彩）",
         ),
         (
             "theme.color_preset",
-            "ocean",
+            "studio",
             "系统主题颜色预设",
         ),
         (
@@ -154,6 +155,24 @@ class DatabaseInitializer:
             "true",
             "登录页是否展示默认账号密码提示",
         ),
+    )
+
+    PERSONAL_EDITION_SETTINGS = (
+        ("registration_enabled", "false", "是否允许用户注册"),
+        ("login_captcha_enabled", "false", "登录是否需要滑动验证码"),
+        ("show_default_login_info", "false", "登录页是否展示默认账号密码提示"),
+        ("login.system_name", "先闲管家（个人版）", "登录页系统名称"),
+        (
+            "login.system_title",
+            "本机部署的\n闲鱼自动化管家",
+            "登录页系统标题",
+        ),
+        (
+            "login.system_description",
+            "账号管理、智能客服、卡券发货、商品发布，一站式打理闲鱼店铺",
+            "登录页系统描述",
+        ),
+        ("auth.footer_ad_html", "", "登录页和注册页底部广告 HTML"),
     )
 
     DEFAULT_SCHEDULED_TASKS = (
@@ -2691,7 +2710,19 @@ class DatabaseInitializer:
         
         try:
             async with async_session_maker() as session:
-                for key, value, description in self.DEFAULT_SETTINGS:
+                settings_map = {
+                    key: (value, description)
+                    for key, value, description in self.DEFAULT_SETTINGS
+                }
+                if is_personal_edition():
+                    for key, value, description in self.PERSONAL_EDITION_SETTINGS:
+                        settings_map[key] = (value, description)
+                settings_to_init = [
+                    (key, value, description)
+                    for key, (value, description) in settings_map.items()
+                ]
+
+                for key, value, description in settings_to_init:
                     try:
                         await session.execute(
                             text("""
@@ -2704,7 +2735,7 @@ class DatabaseInitializer:
                         logger.warning(f"设置 {key} 插入失败: {e}")
                 
                 await session.commit()
-                logger.info(f"✓ 系统设置初始化完成，共 {len(self.DEFAULT_SETTINGS)} 项")
+                logger.info(f"✓ 系统设置初始化完成，共 {len(settings_to_init)} 项")
                 
         except Exception as e:
             logger.error(f"✗ 初始化系统设置失败: {e}")

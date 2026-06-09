@@ -18,6 +18,8 @@ import { getQrcodeUrl } from '@/api/settings'
 import { checkUpdate, type VersionCheckResult } from '@/api/version'
 import { useUIStore } from '@/store/uiStore'
 import { UpdateModal } from './UpdateModal'
+import { isPersonalEdition } from '@/config/deployment'
+import { PERSONAL_APP_NAME, PERSONAL_APP_TAGLINE, PERSONAL_GITHUB_REPO_URL } from '@/config/branding'
 
 export function About() {
   const { addToast } = useUIStore()
@@ -91,15 +93,21 @@ export function About() {
   }, [addToast])
 
   useEffect(() => {
-    // 获取使用人数
-    fetch('/project-stats')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.total_users) {
-          setTotalUsers(data.total_users)
-        }
-      })
-      .catch(() => {})
+    if (!isPersonalEdition()) {
+      fetch('/project-stats')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.total_users) {
+            setTotalUsers(data.total_users)
+          }
+        })
+        .catch(() => {})
+    }
+
+    if (isPersonalEdition()) {
+      handleCheckUpdate(true)
+      return
+    }
 
     // 加载群二维码
     getQrcodeUrl('wechat').then(res => {
@@ -140,10 +148,10 @@ export function About() {
           <MessageSquare className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          闲鱼自动回复管理系统
+          {isPersonalEdition() ? PERSONAL_APP_NAME : '闲鱼自动回复管理系统'}
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          智能管理您的闲鱼店铺，提升客服效率
+          {isPersonalEdition() ? PERSONAL_APP_TAGLINE : '智能管理您的闲鱼店铺，提升客服效率'}
         </p>
         {/* 版本和使用人数 */}
         <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
@@ -163,7 +171,7 @@ export function About() {
               <span>有更新 v{updateInfo.remote_version}</span>
             </button>
           )}
-          {totalUsers > 0 && (
+          {!isPersonalEdition() && totalUsers > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-600 dark:from-blue-500/20 dark:to-cyan-500/20 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/30">
               <Globe className="w-3.5 h-3.5" />
               <span>{totalUsers.toLocaleString()} 人使用</span>
@@ -188,7 +196,19 @@ export function About() {
         </div>
       </div>
 
+      {isPersonalEdition() && (
+        <div className="vben-card">
+          <div className="vben-card-body">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              {PERSONAL_APP_NAME} 面向本机或私有服务器单用户部署。侧边栏按「工作台 / 店铺运营 / 客服中心 / 商品发布 / 消息与日志 / 个人」分类，
+              保留账号管理、在线聊天、自动回复、卡券发货、订单处理、商品发布与通知能力；不含分销、多用户注册与商业化模块。
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Contact Groups */}
+      {!isPersonalEdition() && (
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="vben-card">
           <div className="vben-card-header">
@@ -351,6 +371,7 @@ export function About() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Features */}
       <div className="vben-card">
@@ -395,25 +416,63 @@ export function About() {
         <div className="vben-card-body">
           <div className="flex flex-wrap gap-3">
             <a
-              href="https://github.com/zhinianboke"
+              href="https://github.com/YansClip"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
             >
               <Github className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">zhinianboke</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">项目作者</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">YansClip</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">个人版维护</span>
             </a>
-            <a
-              href="https://github.com/legeling"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-            >
-              <Github className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">legeling</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">前端重构</span>
-            </a>
+            {!isPersonalEdition() && (
+              <>
+                <a
+                  href="https://github.com/zhinianboke"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <Github className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">zhinianboke</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">上游作者</span>
+                </a>
+                <a
+                  href="https://github.com/legeling"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <Github className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">legeling</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">前端重构</span>
+                </a>
+              </>
+            )}
+            {isPersonalEdition() && (
+              <>
+                <a
+                  href="https://github.com/zhinianboke"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <Github className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">zhinianboke</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">上游项目</span>
+                </a>
+                <a
+                  href="https://github.com/legeling"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <Github className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">legeling</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">上游前端</span>
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -426,13 +485,13 @@ export function About() {
         <div className="vben-card-body">
           <div className="flex gap-3">
             <a
-              href="https://github.com/zhinianboke/xianyu-auto-reply"
+              href={isPersonalEdition() ? PERSONAL_GITHUB_REPO_URL : 'https://github.com/zhinianboke/xianyu-auto-reply'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors text-sm"
             >
               <Github className="w-4 h-4" />
-              <span>GitHub</span>
+              <span>{isPersonalEdition() ? '个人版仓库' : 'GitHub'}</span>
             </a>
           </div>
         </div>

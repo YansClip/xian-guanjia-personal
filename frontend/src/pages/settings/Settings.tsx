@@ -33,6 +33,7 @@ import { MenuVisibilitySettings } from './MenuVisibilitySettings'
 import { ThemeAppearanceSettingsCard } from './ThemeAppearanceSettingsCard'
 import { ThemeFontSettingsCard } from './ThemeFontSettingsCard'
 import { useMenuVisibilityStore } from '@/store/menuVisibilityStore'
+import { isPersonalEdition } from '@/config/deployment'
 import type {
   AuthFooterAdSettings,
   DisclaimerSettings,
@@ -538,35 +539,39 @@ export function Settings() {
               </h2>
             </div>
             <div className="vben-card-body space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">允许用户注册</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">开启后允许新用户注册账号</p>
-                </div>
-                <label className="switch-ios">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(settings?.registration_enabled ?? false)}
-                    onChange={(e) => setSettings(s => s ? { ...s, registration_enabled: e.target.checked } : null)}
-                  />
-                  <span className="switch-slider"></span>
-                </label>
-              </div>
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">显示默认登录信息</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">登录页面显示默认账号密码提示</p>
-                </div>
-                <label className="switch-ios">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(settings?.show_default_login_info ?? false)}
-                    onChange={(e) => setSettings(s => s ? { ...s, show_default_login_info: e.target.checked } : null)}
-                  />
-                  <span className="switch-slider"></span>
-                </label>
-              </div>
-              <div className="flex items-center justify-between py-3 border-t border-slate-100 dark:border-slate-700">
+              {!isPersonalEdition() && (
+                <>
+                  <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-700">
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">允许用户注册</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">开启后允许新用户注册账号</p>
+                    </div>
+                    <label className="switch-ios">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(settings?.registration_enabled ?? false)}
+                        onChange={(e) => setSettings(s => s ? { ...s, registration_enabled: e.target.checked } : null)}
+                      />
+                      <span className="switch-slider"></span>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between py-3">
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">显示默认登录信息</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">登录页面显示默认账号密码提示</p>
+                    </div>
+                    <label className="switch-ios">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(settings?.show_default_login_info ?? false)}
+                        onChange={(e) => setSettings(s => s ? { ...s, show_default_login_info: e.target.checked } : null)}
+                      />
+                      <span className="switch-slider"></span>
+                    </label>
+                  </div>
+                </>
+              )}
+              <div className={`flex items-center justify-between py-3 ${isPersonalEdition() ? '' : 'border-t border-slate-100 dark:border-slate-700'}`}>
                 <div>
                   <p className="font-medium text-slate-900 dark:text-slate-100">登录滑动验证码</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400">开启后账号密码登录需要完成滑动验证</p>
@@ -720,7 +725,7 @@ export function Settings() {
             </div>
           </div>
 
-          {/* 群二维码管理 */}
+          {!isPersonalEdition() && (
           <div className="vben-card lg:col-span-2">
             <div className="vben-card-header">
               <h2 className="vben-card-title">
@@ -879,6 +884,7 @@ export function Settings() {
               </div>
             </div>
           </div>
+          )}
         </div>
       )}
 
@@ -908,7 +914,7 @@ export function Settings() {
         />
       )}
 
-      {user?.is_admin && (
+      {user?.is_admin && !isPersonalEdition() && (
         <AuthFooterAdSettingsCard
           settings={authFooterAdSettings}
           saving={authFooterAdSaving}
@@ -926,7 +932,7 @@ export function Settings() {
         />
       )}
 
-      {user?.is_admin && (
+      {user?.is_admin && !isPersonalEdition() && (
         <MenuVisibilitySettings
           hiddenMenuKeys={getHiddenMenuKeysFromSettings(settings)}
           onChange={handleHiddenMenusChange}
@@ -935,8 +941,8 @@ export function Settings() {
         />
       )}
 
-      {/* 第三行：支付宝配置（仅管理员可见） */}
-      {user?.is_admin && (
+      {/* 第三行：支付宝配置（仅管理员可见，平台版） */}
+      {user?.is_admin && !isPersonalEdition() && (
         <div className="grid grid-cols-1 gap-4">
           <div className="vben-card">
             <div className="vben-card-header">
@@ -1067,8 +1073,8 @@ export function Settings() {
         </div>
       )}
 
-      {/* 广告费用管理（仅管理员可见） */}
-      {user?.is_admin && (
+      {/* 广告费用管理（仅管理员可见，平台版） */}
+      {user?.is_admin && !isPersonalEdition() && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="vben-card">
             <div className="vben-card-header">
@@ -1114,8 +1120,8 @@ export function Settings() {
         </div>
       )}
 
-      {/* 第四行：分销设置（仅管理员可见） */}
-      {user?.is_admin && (
+      {/* 第四行：分销设置（仅管理员可见，平台版） */}
+      {user?.is_admin && !isPersonalEdition() && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="vben-card">
             <div className="vben-card-header">

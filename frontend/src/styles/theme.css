@@ -1,17 +1,17 @@
 :root {
-  --theme-primary-50: 239 246 255;
-  --theme-primary-100: 219 234 254;
-  --theme-primary-200: 191 219 254;
-  --theme-primary-300: 147 197 253;
-  --theme-primary-400: 96 165 250;
-  --theme-primary-500: 59 130 246;
-  --theme-primary-600: 37 99 235;
-  --theme-primary-700: 29 78 216;
-  --theme-primary-800: 30 64 175;
-  --theme-primary-900: 30 58 138;
-  --theme-gradient-from: 37 99 235;
-  --theme-gradient-via: 59 130 246;
-  --theme-gradient-to: 14 165 233;
+  --theme-primary-50: 250 250 250;
+  --theme-primary-100: 245 245 245;
+  --theme-primary-200: 229 229 229;
+  --theme-primary-300: 212 212 212;
+  --theme-primary-400: 163 163 163;
+  --theme-primary-500: 115 115 115;
+  --theme-primary-600: 82 82 82;
+  --theme-primary-700: 64 64 64;
+  --theme-primary-800: 38 38 38;
+  --theme-primary-900: 23 23 23;
+  --theme-gradient-from: 23 23 23;
+  --theme-gradient-via: 64 64 64;
+  --theme-gradient-to: 115 115 115;
   --theme-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   --color-primary: var(--theme-primary-500);
   --color-primary-hover: var(--theme-primary-600);
@@ -22,12 +22,12 @@
 }
 
 .dark {
-  --color-primary: var(--theme-primary-400);
-  --color-primary-hover: var(--theme-primary-500);
-  --color-primary-light: var(--theme-primary-900);
-  --theme-surface-glow: rgb(var(--theme-primary-900) / 0.28);
-  --theme-button-shadow: rgb(var(--theme-primary-900) / 0.35);
-  --theme-focus-ring: rgb(var(--theme-primary-800) / 0.52);
+  --color-primary: var(--theme-primary-50);
+  --color-primary-hover: var(--theme-primary-200);
+  --color-primary-light: var(--theme-primary-800);
+  --theme-surface-glow: rgb(255 255 255 / 0.04);
+  --theme-button-shadow: rgb(0 0 0 / 0.45);
+  --theme-focus-ring: rgb(255 255 255 / 0.18);
 }
 
 body {

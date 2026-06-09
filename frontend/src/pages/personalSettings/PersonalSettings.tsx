@@ -16,6 +16,7 @@ import { PageLoading, ButtonLoading } from '@/components/common/Loading'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
 import { RechargeModal } from './RechargeModal'
 import { FundFlowModal } from './FundFlowModal'
+import { isPersonalEdition } from '@/config/deployment'
 
 // 余额设置的 key
 const BALANCE_KEY = 'balance'
@@ -82,19 +83,21 @@ export function PersonalSettings() {
     if (!_hasHydrated || !isAuthenticated || !token) return
     try {
       setLoading(true)
-      const result = await getUserSetting(BALANCE_KEY)
-      if (result.success && result.value !== undefined) {
-        setBalance(result.value)
-      } else {
-        setBalance('0.00')
-      }
-      const qrcodeResult = await getUserSetting(PAYMENT_QRCODE_KEY)
-      if (qrcodeResult.success && qrcodeResult.value) {
-        setPaymentQrcode(qrcodeResult.value)
-      }
-      const typeResult = await getUserSetting(PAYMENT_TYPE_KEY)
-      if (typeResult.success && typeResult.value) {
-        setPaymentType(typeResult.value as 'alipay' | 'wechat')
+      if (!isPersonalEdition()) {
+        const result = await getUserSetting(BALANCE_KEY)
+        if (result.success && result.value !== undefined) {
+          setBalance(result.value)
+        } else {
+          setBalance('0.00')
+        }
+        const qrcodeResult = await getUserSetting(PAYMENT_QRCODE_KEY)
+        if (qrcodeResult.success && qrcodeResult.value) {
+          setPaymentQrcode(qrcodeResult.value)
+        }
+        const typeResult = await getUserSetting(PAYMENT_TYPE_KEY)
+        if (typeResult.success && typeResult.value) {
+          setPaymentType(typeResult.value as 'alipay' | 'wechat')
+        }
       }
       // 加载重发货触发关键字
       const redeliveryResult = await getUserSetting(REDELIVERY_TRIGGER_KEYWORD_KEY)
@@ -235,8 +238,10 @@ export function PersonalSettings() {
 
   useEffect(() => {
     loadSettings()
-    loadDockCode()
-    loadSecretKey()
+    if (!isPersonalEdition()) {
+      loadDockCode()
+      loadSecretKey()
+    }
   }, [_hasHydrated, isAuthenticated, token])
 
   // 保存重发货触发关键字
@@ -448,7 +453,7 @@ export function PersonalSettings() {
         </div>
       </div>
 
-      {/* 余额管理 */}
+      {!isPersonalEdition() && (
       <div className="vben-card">
         <div className="vben-card-header flex items-center justify-between">
           <h2 className="vben-card-title">
@@ -535,8 +540,51 @@ export function PersonalSettings() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* 分销管理 */}
+      {isPersonalEdition() ? (
+      <div className="vben-card">
+        <div className="vben-card-header">
+          <h2 className="vben-card-title">
+            <User className="w-4 h-4" />
+            联系方式
+          </h2>
+        </div>
+        <div className="vben-card-body space-y-4">
+          <p className="text-xs text-gray-500 mb-2">设置您的微信和QQ，方便接收通知或备忘联系信息</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="input-label">微信</label>
+              <input
+                type="text"
+                value={contactWechat}
+                onChange={(e) => setContactWechat(e.target.value)}
+                placeholder="请输入微信号"
+                className="input-ios"
+              />
+            </div>
+            <div>
+              <label className="input-label">QQ</label>
+              <input
+                type="text"
+                value={contactQQ}
+                onChange={(e) => setContactQQ(e.target.value)}
+                placeholder="请输入QQ号"
+                className="input-ios"
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleSaveContact}
+            disabled={savingContact}
+            className="btn-ios-primary"
+          >
+            {savingContact ? <ButtonLoading /> : <Save className="w-4 h-4" />}
+            保存联系方式
+          </button>
+        </div>
+      </div>
+      ) : (
       <div className="vben-card">
         <div className="vben-card-header">
           <h2 className="vben-card-title">
@@ -647,6 +695,7 @@ export function PersonalSettings() {
           </div>
         </div>
       </div>
+      )}
 
       {/* 重发货触发关键字 */}
       <div className="vben-card">

@@ -28,6 +28,7 @@ interface TabsStore {
 // 路由标题映射
 const routeTitles: Record<string, string> = {
   '/dashboard': '仪表盘',
+  '/data-analysis/overview': '数据总览',
   '/accounts': '账号管理',
   '/items': '商品管理',
   '/keywords': '自动回复',
@@ -44,11 +45,8 @@ const routeTitles: Record<string, string> = {
   '/message-filters': '消息过滤',
   '/online-chat': '在线聊天',
   '/online-chat-new': '在线聊天',
-  '/feedback': '意见反馈',
-  '/ad-apply': '广告申请',
   '/disclaimer': '免责声明',
   '/tutorial': '使用教程',
-  '/admin/users': '用户管理',
   '/admin/logs': '系统日志',
   '/admin/auto-reply-logs': '消息日志',
   '/admin/account-login-logs': '账号登录日志',
@@ -62,20 +60,9 @@ const routeTitles: Record<string, string> = {
   '/admin/close-notice-batches': '消息通知关闭日志',
   '/admin/db-backup-logs': '数据库备份日志',
   '/admin/scheduled-tasks': '定时任务',
-  '/admin/announcements': '公告管理',
-  '/admin/ad-manage': '广告管理',
   '/about': '关于',
   '/personal-settings': '个人设置',
   '/cards': '卡券管理',
-  '/distribution/supply': '货源广场',
-  '/distribution/sources': '货源管理',
-  '/distribution/docked': '对接的商品',
-  '/distribution/dealers': '分销商管理',
-  '/distribution/sub-dealers': '下级分销商',
-  '/admin/fund-flows': '资金流水',
-  '/distribution/agent-orders': '代理订单',
-  '/accounts/shared-scan': '共享扫码登录',
-  '/shared-scan': '共享扫码登录',
   '/product-publish/materials': '素材库',
   '/product-publish/single': '单品发布',
   '/product-publish/batch': '批量发布',
@@ -84,7 +71,7 @@ const routeTitles: Record<string, string> = {
   '/blacklist': '黑名单管理',
 }
 
-const hiddenAliasPaths = new Set(['/shared-scan'])
+const hiddenAliasPaths = new Set<string>()
 
 export const useTabsStore = create<TabsStore>()(
   persist(

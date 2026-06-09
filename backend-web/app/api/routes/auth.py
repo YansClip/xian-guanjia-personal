@@ -18,6 +18,7 @@ from common.models.user import User, UserRole, UserStatus
 from common.schemas.auth import LoginRequest, LoginResponse, Token, VerifyResponse
 from common.schemas.common import ApiResponse
 from common.schemas.user import UserCreate, UserPublic
+from common.core.deployment import is_personal_edition
 from app.services.auth import AuthService
 from app.services.user_service import UserService
 
@@ -223,6 +224,9 @@ async def register_user(
     payload: UserCreate,
     user_service: UserService = Depends(deps.get_user_service),
 ) -> ApiResponse:
+    if is_personal_edition():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="自用版已关闭用户注册")
+
     # 验证邮箱验证码
     if payload.email and payload.verification_code:
         from app.api.routes.captcha import check_email_code

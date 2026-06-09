@@ -9,13 +9,17 @@ import { getDefaultLoginBrandingSettings, getSystemSettings, LOGIN_BRANDING_UPDA
 import type { LoginBrandingSettings } from '@/types'
 import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/utils/cn'
+import { isPersonalEdition } from '@/config/deployment'
+import { PERSONAL_APP_NAME } from '@/config/branding'
 
 // 懒加载 ChatNew，由 MainLayout 直接管理生命周期以实现 KeepAlive
 const ChatNew = React.lazy(() => import('@/pages/chat-new/ChatNew').then(m => ({ default: m.ChatNew })))
 
 export function MainLayout() {
   const { sidebarCollapsed } = useUIStore()
-  const [systemName, setSystemName] = useState(getDefaultLoginBrandingSettings()['login.system_name'])
+  const [systemName, setSystemName] = useState(
+    isPersonalEdition() ? PERSONAL_APP_NAME : getDefaultLoginBrandingSettings()['login.system_name']
+  )
   const location = useLocation()
   const isChatNew = location.pathname === '/online-chat-new'
   // 首次访问后始终挂载，切换菜单时仅隐藏不卸载
@@ -59,7 +63,7 @@ export function MainLayout() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+    <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300">
       <Sidebar systemName={systemName} />
       
       {/* Main content area - 响应侧边栏收缩状态 */}
@@ -70,7 +74,7 @@ export function MainLayout() {
         !sidebarCollapsed && 'sm:ml-56'
       )}>
         {/* Fixed header area */}
-        <div className="sticky top-0 z-40 bg-slate-50 dark:bg-slate-900">
+        <div className="sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
           {/* Top navbar */}
           <TopNavbar systemName={systemName} />
           

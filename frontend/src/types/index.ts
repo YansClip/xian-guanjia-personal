@@ -205,7 +205,7 @@ export interface AuthFooterAdSettings {
 }
 
 export type ThemeEffect = 'solid' | 'gradient'
-export type ThemeColorPreset = 'ocean' | 'emerald' | 'violet' | 'indigo' | 'amber' | 'sunset' | 'aurora' | 'rose' | 'ruby'
+export type ThemeColorPreset = 'studio' | 'ocean' | 'emerald' | 'violet' | 'indigo' | 'amber' | 'sunset' | 'aurora' | 'rose' | 'ruby'
 export type ThemeFontFamily = 'system' | 'yahei' | 'heiti' | 'songti' | 'kaiti' | 'fangsong' | 'xingkai' | 'rounded' | 'monospace'
 
 export interface ThemeAppearanceSettings {

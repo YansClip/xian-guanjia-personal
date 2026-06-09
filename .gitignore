@@ -8,6 +8,9 @@
 **/.env
 **/.env.local
 **/.env.*.local
+.env.study
+frontend/.env.study
+.study-frontend.pid
 .env.enc
 !**/.env.example
 

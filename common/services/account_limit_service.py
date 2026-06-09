@@ -11,6 +11,7 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from common.core.deployment import is_personal_edition
 from common.models.user import User
 from common.models.xy_account import XYAccount
 
@@ -49,6 +50,9 @@ class AccountLimitService:
         }
 
     async def ensure_can_add_account(self, owner_id: int) -> dict[str, int | None]:
+        if is_personal_edition():
+            return await self.get_status(owner_id)
+
         status = await self.get_status(owner_id)
         remaining_count = status["remaining_count"]
         if remaining_count is not None and remaining_count <= 0:

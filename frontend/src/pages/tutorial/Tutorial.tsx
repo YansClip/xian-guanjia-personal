@@ -38,6 +38,8 @@ import {
   Circle,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { isPersonalEdition } from '@/config/deployment'
+import { personalTutorialData } from '@/config/personal-tutorial'
 
 // 教程内容数据结构
 interface TutorialSection {
@@ -336,6 +338,49 @@ const tutorialData: TutorialSection[] = [
   },
 ]
 
+const PERSONAL_HIDDEN_TUTORIAL_IDS = new Set([
+  'admin-users',
+  'admin-announcements',
+  'admin-ad-manage',
+  'feedback',
+  'ad-apply',
+])
+
+function filterTutorialSections(sections: TutorialSection[]): TutorialSection[] {
+  if (!isPersonalEdition()) {
+    return sections
+  }
+
+  return sections
+    .map((section) => {
+      if (PERSONAL_HIDDEN_TUTORIAL_IDS.has(section.id)) {
+        return null
+      }
+
+      if (!section.children) {
+        return section
+      }
+
+      const children = filterTutorialSections(section.children)
+      if (children.length === 0) {
+        return null
+      }
+
+      if (section.id === 'other') {
+        return {
+          ...section,
+          description: '免责声明、关于等辅助功能。',
+          children,
+        }
+      }
+
+      return { ...section, children }
+    })
+    .filter((section): section is TutorialSection => section !== null)
+}
+
+const tutorialSections = isPersonalEdition() ? personalTutorialData : filterTutorialSections(tutorialData)
+
 export function Tutorial() {
   const [activeSection, setActiveSection] = useState<string>('dashboard')
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['dashboard']))
@@ -492,7 +537,7 @@ export function Tutorial() {
               <h2 className="vben-card-title">目录</h2>
             </div>
             <div className="p-2 overflow-y-auto" style={{ height: 'calc(100% - 50px)' }}>
-              {tutorialData.map(section => renderNavItem(section))}
+              {tutorialSections.map(section => renderNavItem(section))}
             </div>
           </div>
         </div>
@@ -505,7 +550,7 @@ export function Tutorial() {
               className="p-6 overflow-y-auto"
               style={{ height: 'calc(100vh - 180px)' }}
             >
-              {tutorialData.map(section => renderContentSection(section))}
+              {tutorialSections.map(section => renderContentSection(section))}
             </div>
           </div>
         </div>

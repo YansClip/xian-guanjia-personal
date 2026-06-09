@@ -7,6 +7,8 @@ import { DisclaimerModal } from '@/components/common/DisclaimerModal'
 import { verifyToken } from '@/api/auth'
 import { getHiddenMenuKeysFromSettings, getPublicSystemSettings, getSystemSettings, getUserSetting, normalizeDisclaimerSettings, updateUserSetting } from '@/api/settings'
 import { getMenuAccessFallbackPath, isPathBlockedForUser } from '@/config/navigation'
+import { isPersonalEdition } from '@/config/deployment'
+import { PERSONAL_DISCLAIMER_SETTINGS } from '@/config/branding'
 import { useMenuVisibilityStore } from '@/store/menuVisibilityStore'
 import { applyThemeSettings, initializeThemeMode } from '@/utils/theme'
 import type { DisclaimerSettings } from '@/types'
@@ -88,6 +90,17 @@ const CloseNoticeBatchDetailPage = React.lazy(() => import('@/pages/closeNoticeL
 const RedFlowerBatches = React.lazy(() => import('@/pages/redFlowerLogs/RedFlowerBatches').then(m => ({ default: m.RedFlowerBatches })))
 const RedFlowerBatchDetailPage = React.lazy(() => import('@/pages/redFlowerLogs/RedFlowerBatchDetail').then(m => ({ default: m.RedFlowerBatchDetailPage })))
 
+function personalEditionElement(element: React.ReactNode, redirectTo: string = '/dashboard') {
+  if (isPersonalEdition()) {
+    return <Navigate to={redirectTo} replace />
+  }
+  return element
+}
+
+function personalAuthElement(element: React.ReactNode) {
+  return personalEditionElement(element, '/login')
+}
+
 // 懒加载页面的加载遮罩
 function PageLoading() {
   return (
@@ -109,7 +122,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [disclaimerState, setDisclaimerState] = useState<'checking' | 'agreed' | 'pending'>('checking')
   const [menuState, setMenuState] = useState<'checking' | 'ready'>('checking')
   const [showDisclaimer, setShowDisclaimer] = useState(false)
-  const [disclaimerSettings, setDisclaimerSettings] = useState<DisclaimerSettings>(() => normalizeDisclaimerSettings())
+  const [disclaimerSettings, setDisclaimerSettings] = useState<DisclaimerSettings>(() =>
+    isPersonalEdition() ? PERSONAL_DISCLAIMER_SETTINGS : normalizeDisclaimerSettings()
+  )
   const checkingRef = useRef(false)
 
   useEffect(() => {
@@ -168,16 +183,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             const settingsResult = await getSystemSettings()
             if (settingsResult.success && settingsResult.data) {
               applyThemeSettings(settingsResult.data)
-              setDisclaimerSettings(normalizeDisclaimerSettings(settingsResult.data))
+              setDisclaimerSettings(
+                isPersonalEdition() ? PERSONAL_DISCLAIMER_SETTINGS : normalizeDisclaimerSettings(settingsResult.data)
+              )
               setIsExeMode(Boolean(settingsResult.data['runtime.is_exe_mode']))
               setHiddenMenuKeys(getHiddenMenuKeysFromSettings(settingsResult.data))
             } else {
-              setDisclaimerSettings(normalizeDisclaimerSettings())
+              setDisclaimerSettings(isPersonalEdition() ? PERSONAL_DISCLAIMER_SETTINGS : normalizeDisclaimerSettings())
               setIsExeMode(false)
               setHiddenMenuKeys([])
             }
           } catch {
-            setDisclaimerSettings(normalizeDisclaimerSettings())
+            setDisclaimerSettings(isPersonalEdition() ? PERSONAL_DISCLAIMER_SETTINGS : normalizeDisclaimerSettings())
             setIsExeMode(false)
             setHiddenMenuKeys([])
           } finally {
@@ -223,8 +240,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // 等待 hydration 或检查完成
   if (!_hasHydrated || authState === 'checking' || menuState === 'checking') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 dark:border-white"></div>
       </div>
     )
   }
@@ -243,7 +260,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
           onAgree={handleAgreeDisclaimer}
           onDisagree={handleDisagreeDisclaimer}
         />
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900" />
+        <div className="min-h-screen bg-white dark:bg-black" />
       </>
     )
   }
@@ -251,8 +268,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // 还在检查免责声明状态
   if (disclaimerState === 'checking') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 dark:border-white"></div>
       </div>
     )
   }
@@ -302,13 +319,13 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/get-activation" element={<GetActivation />} />
-          <Route path="/renew-activation" element={<RenewActivation />} />
-          <Route path="/get-local-version" element={<GetLocalVersion />} />
-          <Route path="/get-source-code" element={<GetSourceCode />} />
+          <Route path="/register" element={personalAuthElement(<Register />)} />
+          <Route path="/get-activation" element={personalAuthElement(<GetActivation />)} />
+          <Route path="/renew-activation" element={personalAuthElement(<RenewActivation />)} />
+          <Route path="/get-local-version" element={personalAuthElement(<GetLocalVersion />)} />
+          <Route path="/get-source-code" element={personalAuthElement(<GetSourceCode />)} />
           {/* 兼职端扫码页面：无需登录，公开访问 */}
-          <Route path="/shared-scan-page" element={<SharedScanPage />} />
+          <Route path="/shared-scan-page" element={personalEditionElement(<SharedScanPage />)} />
 
           {/* Protected routes */}
           <Route
@@ -323,7 +340,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="data-analysis/overview" element={<DataOverview />} />
             <Route path="accounts" element={<Accounts />} />
-            <Route path="accounts/shared-scan" element={<SharedScanManager />} />
+            <Route path="accounts/shared-scan" element={personalEditionElement(<SharedScanManager />)} />
             <Route path="items" element={<Items />} />
             <Route path="orders" element={<Orders />} />
             <Route path="keywords" element={<Keywords />} />
@@ -335,19 +352,19 @@ function App() {
             <Route path="online-chat-new" element={<></>} />
             <Route path="notification-channels" element={<NotificationChannels />} />
             <Route path="message-notifications" element={<MessageNotifications />} />
-            <Route path="feedback" element={<Feedback />} />
-            <Route path="ad-apply" element={<AdApply />} />
+            <Route path="feedback" element={personalEditionElement(<Feedback />)} />
+            <Route path="ad-apply" element={personalEditionElement(<AdApply />)} />
             <Route path="item-search" element={<ItemSearch />} />
             <Route path="goofish-compass" element={<GoofishCompass />} />
             <Route path="goofish-scheduled-crawler" element={<GoofishScheduledCrawler />} />
             <Route path="cards" element={<Cards />} />
-            <Route path="distribution/supply" element={<SupplyManagement />} />
-            <Route path="distribution/docked" element={<DockedProducts />} />
-            <Route path="distribution/dealers" element={<DealerManagement />} />
-            <Route path="distribution/sub-dealers" element={<SubDealerManagement />} />
-            <Route path="admin/fund-flows" element={<FundFlows />} />
-            <Route path="distribution/sources" element={<SourceManagement />} />
-            <Route path="distribution/agent-orders" element={<AgentOrders />} />
+            <Route path="distribution/supply" element={personalEditionElement(<SupplyManagement />)} />
+            <Route path="distribution/docked" element={personalEditionElement(<DockedProducts />)} />
+            <Route path="distribution/dealers" element={personalEditionElement(<DealerManagement />)} />
+            <Route path="distribution/sub-dealers" element={personalEditionElement(<SubDealerManagement />)} />
+            <Route path="admin/fund-flows" element={personalEditionElement(<FundFlows />)} />
+            <Route path="distribution/sources" element={personalEditionElement(<SourceManagement />)} />
+            <Route path="distribution/agent-orders" element={personalEditionElement(<AgentOrders />)} />
             {/* 商品发布 */}
             <Route path="product-publish/materials" element={<ProductMaterials />} />
             <Route path="product-publish/single" element={<ProductPublish />} />
@@ -358,13 +375,16 @@ function App() {
             <Route path="blacklist" element={<Blacklist />} />
             <Route path="settings" element={<Settings />} />
             {/* 共享多人扫码登录管理端 */}
-            <Route path="shared-scan" element={<Navigate to="/accounts/shared-scan" replace />} />
+            <Route
+              path="shared-scan"
+              element={isPersonalEdition() ? <Navigate to="/dashboard" replace /> : <Navigate to="/accounts/shared-scan" replace />}
+            />
             <Route path="disclaimer" element={<Disclaimer />} />
             <Route path="about" element={<About />} />
             <Route path="tutorial" element={<Tutorial />} />
 
             {/* Admin routes */}
-            <Route path="admin/users" element={<Users />} />
+            <Route path="admin/users" element={personalEditionElement(<Users />)} />
             <Route path="admin/logs" element={<Logs />} />
             <Route path="admin/account-login-logs" element={<AccountLoginLogs />} />
             <Route path="admin/db-backup-logs" element={<DbBackupLogs />} />
@@ -388,8 +408,8 @@ function App() {
             <Route path="admin/red-flower-batches" element={<RedFlowerBatches />} />
             <Route path="admin/red-flower-batches/:batchId" element={<RedFlowerBatchDetailPage />} />
             <Route path="admin/scheduled-tasks" element={<ScheduledTasks />} />
-            <Route path="admin/announcements" element={<Announcements />} />
-            <Route path="admin/ad-manage" element={<AdManage />} />
+            <Route path="admin/announcements" element={personalEditionElement(<Announcements />)} />
+            <Route path="admin/ad-manage" element={personalEditionElement(<AdManage />)} />
           </Route>
 
           {/* Catch all */}

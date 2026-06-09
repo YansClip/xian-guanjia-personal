@@ -22,7 +22,6 @@ import {
   Megaphone,
   MessageCircle,
   MessageSquare,
-  MessageSquarePlus,
   Package,
   PackageCheck,
   PackageSearch,
@@ -40,6 +39,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import { isPersonalEdition, PERSONAL_HIDDEN_MENU_KEYS, isPersonalBlockedPath } from '@/config/deployment'
 
 export interface NavItem {
   key: string
@@ -58,6 +58,13 @@ export interface NavGroup {
 }
 
 export type NavEntry = NavItem | NavGroup
+
+/** 一级分类：用于个人版侧边栏分组展示 */
+export interface NavSection {
+  key: string
+  label: string
+  entries: NavEntry[]
+}
 
 export interface FirstLevelMenuOption {
   key: string
@@ -153,13 +160,104 @@ export const adminNavItems: NavEntry[] = [
 
 export const bottomNavItems: NavItem[] = [
   { key: 'tutorial', icon: BookOpen, label: '使用教程', path: '/tutorial' },
-  { key: 'feedback', icon: MessageSquarePlus, label: '意见反馈', path: '/feedback' },
-  { key: 'ad-apply', icon: Image, label: '广告申请', path: '/ad-apply' },
   { key: 'disclaimer', icon: AlertTriangle, label: '免责声明', path: '/disclaimer' },
   { key: 'about', icon: Info, label: '关于', path: '/about' },
 ]
 
-const hideableFirstLevelMenuOptions: FirstLevelMenuOption[] = [...mainNavItems, ...bottomNavItems]
+function filterPersonalNavEntries(entries: NavEntry[]): NavEntry[] {
+  if (!isPersonalEdition()) {
+    return entries
+  }
+  return entries.filter((entry) => !PERSONAL_HIDDEN_MENU_KEYS.has(entry.key))
+}
+
+function pickNavEntriesByKeys(keys: string[], source: NavEntry[]): NavEntry[] {
+  return keys
+    .map((key) => source.find((entry) => entry.key === key))
+    .filter((entry): entry is NavEntry => Boolean(entry))
+}
+
+/** 个人版主导航：一级分类 + 二级菜单项 */
+const personalMainNavSections: NavSection[] = [
+  {
+    key: 'section-workspace',
+    label: '工作台',
+    entries: pickNavEntriesByKeys(['dashboard', 'data-analysis'], mainNavItems),
+  },
+  {
+    key: 'section-shop',
+    label: '店铺运营',
+    entries: pickNavEntriesByKeys(['accounts', 'items', 'orders', 'cards'], mainNavItems),
+  },
+  {
+    key: 'section-service',
+    label: '客服中心',
+    entries: pickNavEntriesByKeys(['online-chat-new', 'keywords', 'message-filters', 'blacklist'], mainNavItems),
+  },
+  {
+    key: 'section-publish',
+    label: '商品发布',
+    entries: pickNavEntriesByKeys(['product-publish'], mainNavItems),
+  },
+  {
+    key: 'section-notify',
+    label: '消息与日志',
+    entries: pickNavEntriesByKeys(['message-logs', 'risk-logs', 'notification-channels', 'message-notifications'], mainNavItems),
+  },
+  {
+    key: 'section-profile',
+    label: '个人',
+    entries: pickNavEntriesByKeys(['personal-settings'], mainNavItems),
+  },
+]
+
+/** 个人版管理员导航 */
+const personalAdminNavSections: NavSection[] = [
+  {
+    key: 'section-admin-system',
+    label: '系统管理',
+    entries: pickNavEntriesByKeys(['settings', 'admin-scheduled-tasks'], adminNavItems),
+  },
+  {
+    key: 'section-admin-logs',
+    label: '日志中心',
+    entries: pickNavEntriesByKeys(['admin-logs'], adminNavItems),
+  },
+]
+
+function flattenNavSections(sections: NavSection[]): NavEntry[] {
+  return sections.flatMap((section) => section.entries)
+}
+
+export function getMainNavSections(): NavSection[] | null {
+  if (!isPersonalEdition()) {
+    return null
+  }
+  return personalMainNavSections
+}
+
+export function getAdminNavSections(): NavSection[] | null {
+  if (!isPersonalEdition()) {
+    return null
+  }
+  return personalAdminNavSections
+}
+
+export function getMainNavItems(): NavEntry[] {
+  if (isPersonalEdition()) {
+    return filterPersonalNavEntries(flattenNavSections(personalMainNavSections))
+  }
+  return filterPersonalNavEntries(mainNavItems)
+}
+
+export function getAdminNavItems(): NavEntry[] {
+  if (isPersonalEdition()) {
+    return filterPersonalNavEntries(flattenNavSections(personalAdminNavSections))
+  }
+  return filterPersonalNavEntries(adminNavItems)
+}
+
+const hideableFirstLevelMenuOptions: FirstLevelMenuOption[] = [...getMainNavItems(), ...bottomNavItems]
   .filter((entry) => !('adminOnly' in entry && entry.adminOnly))
   .map((entry) => ({ key: entry.key, label: entry.label }))
 
@@ -187,7 +285,8 @@ export function getHideableFirstLevelMenuOptions(excludedMenuKeys: string[] = []
 
 export function getVisibleNavEntries(entries: NavEntry[], hiddenMenuKeys: string[], isAdmin: boolean, isExeMode: boolean = false): NavEntry[] {
   const forcedHiddenMenuKeys = getExeForcedHiddenMenuKeys(isExeMode)
-  return entries.filter((entry) => {
+  const scopedEntries = filterPersonalNavEntries(entries)
+  return scopedEntries.filter((entry) => {
     if (forcedHiddenMenuKeys.includes(entry.key)) {
       return false
     }
@@ -220,7 +319,7 @@ function getRouteParentEntry(path: string): NavEntry | NavItem | null {
     return null
   }
 
-  const allEntries: Array<NavEntry | NavItem> = [...mainNavItems, ...adminNavItems, ...bottomNavItems]
+  const allEntries: Array<NavEntry | NavItem> = [...getMainNavItems(), ...getAdminNavItems(), ...bottomNavItems]
   return allEntries.find((entry) => entry.key === parentKey) || null
 }
 
@@ -230,7 +329,7 @@ export function getTopLevelMenuEntryByPath(path: string): NavEntry | NavItem | n
     return routeParentEntry
   }
 
-  const allEntries: NavEntry[] = [...mainNavItems, ...adminNavItems]
+  const allEntries: NavEntry[] = [...getMainNavItems(), ...getAdminNavItems()]
   for (const entry of allEntries) {
     if (isNavGroup(entry)) {
       if (entry.children.some((child) => matchesPath(path, child.path))) {
@@ -257,6 +356,10 @@ export function findTopLevelMenuKeyByPath(path: string): string | null {
 }
 
 export function isPathBlockedForUser(path: string, hiddenMenuKeys: string[], isAdmin: boolean, isExeMode: boolean = false): boolean {
+  if (isPersonalEdition() && isPersonalBlockedPath(path)) {
+    return true
+  }
+
   if (isExeBlockedPath(path, isExeMode)) {
     return true
   }
@@ -288,7 +391,7 @@ export function getMenuAccessFallbackPath(hiddenMenuKeys: string[], isAdmin: boo
   }
 
   const forcedHiddenMenuKeys = getExeForcedHiddenMenuKeys(isExeMode)
-  const visibleMain = mainNavItems.find((entry) => !hiddenMenuKeys.includes(entry.key) && !forcedHiddenMenuKeys.includes(entry.key) && !('adminOnly' in entry && entry.adminOnly))
+  const visibleMain = getMainNavItems().find((entry) => !hiddenMenuKeys.includes(entry.key) && !forcedHiddenMenuKeys.includes(entry.key) && !('adminOnly' in entry && entry.adminOnly))
   if (visibleMain) {
     if (isNavGroup(visibleMain)) {
       return visibleMain.children[0]?.path || '/dashboard'

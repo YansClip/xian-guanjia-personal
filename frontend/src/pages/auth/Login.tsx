@@ -11,6 +11,12 @@ import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/utils/cn'
 import { ButtonLoading } from '@/components/common/Loading'
 import { GeetestCaptcha, type GeetestResult } from '@/components/common/GeetestCaptcha'
+import {
+  DEFAULT_ADMIN_CREDENTIALS_LABEL,
+  DEFAULT_ADMIN_PASSWORD,
+  DEFAULT_ADMIN_USERNAME,
+} from '@/config/credentials'
+import { isPersonalEdition } from '@/config/deployment'
 
 type LoginType = 'username' | 'email-password' | 'email-code'
 
@@ -85,9 +91,13 @@ export function Login() {
       .then((result) => setShowDefaultLogin(result.enabled))
       .catch(() => {})
 
-    getLoginCaptchaStatus()
-      .then((result) => setLoginCaptchaEnabled(result.enabled))
-      .catch(() => {})
+    if (isPersonalEdition()) {
+      setLoginCaptchaEnabled(false)
+    } else {
+      getLoginCaptchaStatus()
+        .then((result) => setLoginCaptchaEnabled(result.enabled))
+        .catch(() => {})
+    }
 
     getLoginBrandingSettings()
       .then((result) => setLoginBranding(result))
@@ -274,12 +284,12 @@ export function Login() {
 
   const fillDefaultCredentials = () => {
     setLoginType('username')
-    setUsername('admin')
-    setPassword('admin123')
+    setUsername(DEFAULT_ADMIN_USERNAME)
+    setPassword(DEFAULT_ADMIN_PASSWORD)
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black transition-colors duration-300">
       <AuthNavbar systemName={loginBranding['login.system_name']} />
 
       <div className="flex-1 flex pt-14">
@@ -288,41 +298,41 @@ export function Login() {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        className="hidden lg:flex lg:w-1/2 bg-slate-900 dark:bg-slate-950 relative overflow-hidden"
+        className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.14),transparent_55%)]" />
+        <div className="absolute inset-0 studio-shimmer-line opacity-20" />
         <div className="relative z-10 flex flex-col justify-center px-16">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex items-center gap-3 mb-8"
           >
-            <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center studio-interactive">
+              <MessageSquare className="w-6 h-6 text-black" />
             </div>
-            <span className="text-2xl font-bold text-white">{loginBranding['login.system_name']}</span>
+            <span className="text-2xl font-semibold text-white tracking-tight">{loginBranding['login.system_name']}</span>
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-4xl font-bold text-white mb-4 leading-tight whitespace-pre-line"
+            transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl font-semibold text-white mb-4 leading-[1.1] whitespace-pre-line tracking-tight"
           >
             {loginBranding['login.system_title']}
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="text-slate-400 text-lg max-w-md"
+            transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-neutral-400 text-lg max-w-md leading-relaxed"
           >
             {loginBranding['login.system_description']}
           </motion.p>
         </div>
-        {/* Decorative circles */}
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-blue-600/10" />
-        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-blue-600/5" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
       </motion.div>
 
       {/* Right side - Login form */}
@@ -340,21 +350,21 @@ export function Login() {
             transition={{ delay: 0.1, duration: 0.4 }}
             className="lg:hidden text-center mb-8"
           >
-            <div className="w-12 h-12 rounded-xl bg-blue-500 text-white mx-auto mb-4 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-neutral-900 dark:bg-white text-white dark:text-black mx-auto mb-4 flex items-center justify-center">
               <MessageSquare className="w-6 h-6" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{loginBranding['login.system_name']}</h1>
+            <h1 className="text-xl font-semibold text-neutral-900 dark:text-white tracking-tight">{loginBranding['login.system_name']}</h1>
           </motion.div>
 
           {/* Login Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-5 sm:p-8">
+          <div className="studio-card rounded-2xl p-5 sm:p-8 studio-animate-in">
             <div className="mb-6">
-              <h2 className="text-xl vben-card-title text-slate-900 dark:text-white">登录</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">欢迎回来，请登录您的账号</p>
+              <h2 className="text-xl vben-card-title text-neutral-900 dark:text-white">登录</h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">欢迎回来，请登录您的账号</p>
             </div>
 
             {/* Login type tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-700 mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
+            <div className="flex border-b border-neutral-200 dark:border-neutral-800 mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
               {[
                 { type: 'username' as const, label: '账号登录' },
                 { type: 'email-password' as const, label: '邮箱密码' },
@@ -366,8 +376,8 @@ export function Login() {
                   className={cn(
                     'px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap flex-shrink-0',
                     loginType === tab.type
-                      ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
-                      : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-300'
+                      ? 'text-neutral-900 dark:text-white border-neutral-900 dark:border-white'
+                      : 'text-neutral-500 dark:text-neutral-400 border-transparent hover:text-neutral-700 dark:hover:text-neutral-200'
                   )}
                 >
                   {tab.label}
@@ -551,10 +561,10 @@ export function Login() {
             </form>
 
             {/* Register link */}
-            {registrationEnabled && (
+            {!isPersonalEdition() && registrationEnabled && (
               <p className="text-center mt-6 text-slate-500 dark:text-slate-400 text-sm">
                 还没有账号？{' '}
-                <Link to="/register" className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300">
+                <Link to="/register" className="text-neutral-900 dark:text-neutral-200 font-medium hover:underline">
                   立即注册
                 </Link>
               </p>
@@ -562,19 +572,19 @@ export function Login() {
 
             {/* Default credentials */}
             {showDefaultLogin && (
-              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700">
+              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
                 <button
                   type="button"
                   onClick={fillDefaultCredentials}
-                  className="w-full flex items-center justify-between p-3 rounded-md 
-                             bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 
-                             transition-colors text-sm"
+                  className="w-full flex items-center justify-between p-3 rounded-xl 
+                             bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 
+                             studio-interactive text-sm border border-neutral-200 dark:border-neutral-800"
                 >
                   <div className="text-left">
-                    <p className="text-slate-500 dark:text-slate-400">演示账号</p>
-                    <p className="text-slate-900 dark:text-white font-medium">admin / admin123</p>
+                    <p className="text-neutral-500 dark:text-neutral-400">管理员账号</p>
+                    <p className="text-neutral-900 dark:text-white font-medium">{DEFAULT_ADMIN_CREDENTIALS_LABEL}</p>
                   </div>
-                  <span className="text-blue-600 dark:text-blue-400">一键填充 →</span>
+                  <span className="text-neutral-900 dark:text-neutral-200">一键填充 →</span>
                 </button>
               </div>
             )}
